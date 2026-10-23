@@ -153,9 +153,10 @@ function addFrame(){
   if(!state)return;
   try{
     const charset=currentCharset();
-    if(frames.length&&frames[0].charset.some((v,i)=>v!==charset[i]))throw Error("Cada JSON usa un unico tileset. Exporta primero los frames existentes o reinicia la lista.");
+    if(frames.length&&frames[0].charset.some((v,i)=>v!==charset[i]))throw Error("El charset cambió entre capturas. Para mantener todos los gráficos, exportá el JSON actual y empezá un proyecto nuevo. La unión de tilesets será otra prueba.");
+    if(frames.length&&frames[0].mode!==$("mode").value)throw Error("Los frames del mismo proyecto deben usar un único modo gráfico.");
     const m=currentMap(),c=colorData(),p=palette(),where=extraMap?"BIN":hex(curAddress("mapCandidates","mapAddr"));
-    frames.push({map:m,colors:c,palette:p,charset,where});
+    frames.push({map:m,colors:c,palette:p,charset,where,mode:$("mode").value});
     $("frameList").textContent=frames.map((f,i)=>"Frame "+(i+1)+": "+f.where+(f.colors?" · Color BIN":" · Color provisional")).join("\n");
     status("Frame "+frames.length+" añadido. Puedes cambiar la direccion de MAP y agregar otro.");
     $("exportJson").disabled=false;$("exportZip").disabled=false;
@@ -164,7 +165,7 @@ function addFrame(){
 function clearFrames(){frames=[];$("frameList").textContent="Sin frames";$("exportJson").disabled=true;$("exportZip").disabled=true;}
 function getExport(){
   if(!frames.length)throw Error("No hay frames");
-  const mode=$("mode").value,name=$("projectName").value.trim()||"C64 RECOVERED SCREENS";
+  const mode=frames[0].mode,name=$("projectName").value.trim()||"C64 RECOVERED SCREENS";
   const project=makeProject(frames[0].charset,frames,mode,name);
   return {project,json:JSON.stringify(project)};
 }
@@ -181,17 +182,47 @@ function exportZip(){
       list.push([p+"_MAP_1000.bin",r.map]);
       if(r.colors)list.push([p+"_COLOR_1000.bin",r.colors]);
     });
-    list.push(["README.txt",utf.encode("RICOS Generic TEST04. Candidate maps/tilesets are heuristic. If COLOR_BIN is absent, color preview is provisional. A static JSON cannot recreate sprites, raster changes or unpacked content.\n")]);
-    send("RICOS_GENERIC_TEST04.zip",zip(list),"application/zip");
+    list.push(["README.txt",utf.encode("RICOS Generic TEST05. VSF capture uses VIC registers; standalone PRG search is heuristic. If COLOR_BIN is absent, color preview is provisional. A static JSON cannot recreate sprites, raster changes or unpacked content.\n")]);
+    send("RICOS_GENERIC_TEST05.zip",zip(list),"application/zip");
   }catch(e){status(e.message,"error");}
 }
 async function fileBytes(id){
   const f=$(id).files[0];return f?new Uint8Array(await f.arrayBuffer()):null;
 }
+async function applySnapshot(bytes,filename){
+  if(typeof ViceCapture==="undefined")throw Error("Falta vice-capture.js");
+  const capture=ViceCapture.parse(bytes);
+  if(capture.bitmap)throw Error("Esta captura usa bitmap VIC. TEST05 recupera por ahora solo mapas de caracteres.");
+  if(capture.ecm)throw Error("Esta captura usa ECM; la conversion ECM requiere una rutina diferente.");
+  // Preserve existing captured frames; use 'Borrar frames' to reset.
+  state=loadSource(capture.ram,"CAPTURE.RAM");
+  extraCharset=capture.tiles;
+  extraMap=capture.map;
+  extraColors=capture.colors;
+  const charCandidates=[{addr:capture.charAddr,score:100}];
+  const mapCandidates=[{addr:capture.screenAddr,score:100}];
+  tableOptions("charCandidates",charCandidates);
+  tableOptions("mapCandidates",mapCandidates);
+  $("charAddr").value="";
+  $("mapAddr").value="";
+  $("bg").value=capture.palette.bg;
+  $("border").value=capture.palette.border;
+  $("multi1").value=capture.palette.multi1;
+  $("multi2").value=capture.palette.multi2;
+  $("mode").value=capture.mode;
+  $("addFrame").disabled=false;
+  status("CAPTURA VIC: "+filename+" | MAP "+hex(capture.screenAddr)+
+    " | CHARSET "+hex(capture.charAddr)+" ("+capture.charSource+")"+
+    " | Color RAM real | "+capture.mode+
+    (capture.notes.length?" | ATENCIÓN: "+capture.notes.join("; "):""));
+  preview();
+  return capture;
+}
 async function analyze(){
   try{
     const file=$("source").files[0];if(!file)throw Error("Selecciona un archivo PRG o BIN");
     const data=new Uint8Array(await file.arrayBuffer());
+    if(file.name.toLowerCase().endsWith(".vsf")){await applySnapshot(data,file.name);return;}
     state=loadSource(data,file.name,number($("rawBase").value));
     extraCharset=await fileBytes("charOverride");extraMap=await fileBytes("mapOverride");extraColors=await fileBytes("colorOverride");
     const charCandidates=findCandidates(state,0x800,2048,rankCharset,32);
