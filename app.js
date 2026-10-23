@@ -24,9 +24,9 @@ function project(maps,mode,label){
     data:[Array.from({length:64},(_,p)=>(full[t*8+(p>>3)]>>(7-(p&7)))&1)]
   }));
   const frames=maps.map(m=>({
-    bgColor:0,borderColor:0,
+    bgColor:0,borderColor:0,c64Multi1Color:11,c64Multi2Color:12,
     data:Array.from({length:25},(_,y)=>Array.from({length:40},(_,x)=>({
-      t:m[y*40+x],fc:1,bc:-1
+      t:m[y*40+x],fc:mode==="c64multicolor"?9:1,bc:-1
     })))
   }));
   return {
@@ -38,7 +38,7 @@ function project(maps,mode,label){
       screenMode:mode,cellWidth:8,cellHeight:8,tileSetId:1,colorPaletteId:2,
       blockMode:false,frames:frames
     }]},
-    ricoInfo:{modeOriginal:"Raster split bitmap hires + multicolor chars",colorRam:"not recovered",warning:"WHITE PREVIEW: original raster and sprites are not reproduced"}
+    ricoInfo:{modeOriginal:"Raster split bitmap hires + multicolor chars",colorRam:"not recovered; PROVISIONAL multicolor fc=9, hires fc=1",warning:"WHITE PREVIEW: original raster and sprites are not reproduced"}
   };
 }
 function label(n){return "LEVEL_"+String(n+1).padStart(2,"0");}
