@@ -51,11 +51,11 @@ Nueva página independiente: [generic.html](./generic.html). El conversor especi
 - PRG C64 estándar: respeta sus dos bytes de dirección de carga y **no ejecuta código**.
 - RAM completa de 65536 bytes (BIN): explora el espacio $0000–$FFFF.
 - BIN parcial: requiere especificar una dirección de carga.
-- BIN externos opcionales: charset de 1024/2048 bytes, mapa de 1000/1024 bytes, Color RAM de 1000/1024 bytes.
+- BIN externos opcionales: charset de 1024/2048 bytes, mapa de 1000/1024 bytes, Color RAM de 1000/1024 bytes. Los archivos MAP BIN y COLOR BIN pueden cambiarse al añadir cada nuevo frame.
 - Búsqueda heurística de charsets de 2048 bytes alineados en $0800 y mapas de 1000 bytes alineados en $0400.
 - Preview real de bytes elegidos (C64 hires y multicolor carácter), selección manual de direcciones; pantalla 40×25, tileset 256 glifos.
 - Acumula pantallas en frames separados, manteniendo un **charset compartido** para el proyecto; exporta JSON nativo LVLLVL y ZIP con datos RAW.
-- Los colores VIC ($D020–$D023) se configuran por frame. Sin Color RAM BIN, los colores del frame son **provisionales**.
+- Los colores VIC ($D020–$D023) se configuran por frame. Sin Color RAM BIN, los colores del frame son **provisionales**. Se puede habilitar manualmente la lectura de $D800 de un dump RAM únicamente si contiene realmente valores de Color RAM/IO.
 
 ### Importante
 
