@@ -12,7 +12,7 @@ const ViceCapture=(()=>{
     if(bytes.length<80||ascii(bytes,0,18)!=="VICE Snapshot File"||bytes[18]!==26)fail("cabecera VICE inválida");
     const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
     const machine=ascii(bytes,21,16);
-    if(!/^C64\b/.test(machine))fail("snapshot de otra máquina: "+machine);
+    if(machine!=="C64" && machine!=="C64SC")fail("snapshot de otra máquina: "+machine);
     let off=37;
     if(ascii(bytes,off,12)==="VICE Version"){off+=13+8;}
     const modules={};
