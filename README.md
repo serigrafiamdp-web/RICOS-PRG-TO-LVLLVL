@@ -28,3 +28,17 @@ Alternativa CLI: `python exporter.py "oils well.prg" --output OILS_WELL_LVLLVL.z
 - Esta versión analiza **Oil's Well COPY SOFT**, no cualquier PRG C64.
 
 No se sube el juego ni sus datos propietarios al repositorio: solo el código del exportador. El usuario proporciona su PRG localmente.
+
+## TEST03 - Colores originales por nivel (2026-10-23)
+
+Los colores ya NO son grises provisionales: se extraen del PRG original, desde tablas ASM:
+
+- `$963D + 4*nivel` -> `$D020`, `$D021`, `$D022`, `$D023`, paleta de cada nivel.
+- `$965D + 4*nivel` -> colores de sprite y bandas de Color RAM (primeras 7 filas / últimas 18 filas).
+- `$967D + 4*nivel` -> excepciones de color RAM para elementos decorativos.
+
+El `JSON` utiliza un frame por nivel, cada uno con su propia paleta, y conserva el mismo charset y los mismos índices de mapa del TEST02.
+
+Los `BIN/*_COLOR_RAM_ORIGINAL_ESTATICO.bin` tienen 1000 bytes por nivel. No incluyen las modificaciones dinámicas de Color RAM durante el juego. Las imágenes PRG estáticas anteriores no implementan el raster split real entre bitmap hires y mapa multicolor. No se pretende reconstruirlo dentro de una capa LVLLVL.
+
+Para comprobar la corrección visual en el editor, usar `LVLLVL/OILS_WELL_8_NIVELES.json` y elegir `c64multicolor`.
