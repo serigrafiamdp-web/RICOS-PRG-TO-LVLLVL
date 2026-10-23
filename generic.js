@@ -102,9 +102,14 @@ function currentMap(){
   return read(state,curAddress("mapCandidates","mapAddr"),1000);
 }
 function colorData(){
-  if(!extraColors)return null;
-  if(extraColors.length!==1000&&extraColors.length!==1024)throw Error("COLOR BIN: 1000 o 1024 bytes");
-  return extraColors.slice(0,1000);
+  if(extraColors){
+    if(extraColors.length!==1000&&extraColors.length!==1024)throw Error("COLOR BIN: 1000 o 1024 bytes");
+    return extraColors.slice(0,1000);
+  }
+  if($("ramColor").checked && state && present(state,0xD800,1000)){
+    return read(state,0xD800,1000).map(x=>x&15);
+  }
+  return null;
 }
 function palette(){
   return {border:number($("border").value)&15,bg:number($("bg").value)&15,
@@ -238,4 +243,14 @@ if(typeof module!=="undefined"&&module.exports){
   $("exportJson").addEventListener("click",exportJson);
   $("exportZip").addEventListener("click",exportZip);
   ["charCandidates","mapCandidates","charAddr","mapAddr","bg","border","multi1","multi2","mode"].forEach(id=>$(id).addEventListener("change",preview));
+  ["charOverride","mapOverride","colorOverride"].forEach((id,index)=>{
+    $(id).addEventListener("change",async()=>{
+      const data=await fileBytes(id);
+      if(index===0)extraCharset=data;
+      else if(index===1)extraMap=data;
+      else extraColors=data;
+      preview();
+    });
+  });
+  $("ramColor").addEventListener("change",preview);
 }
