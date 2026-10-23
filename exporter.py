@@ -28,16 +28,40 @@ def decode(raw):
         raise ValueError("Índices fuera del charset de 128")
     return tiles,maps
 
-def project(tiles,maps,mode="c64multicolor",name="OILS WELL - 8 LEVELS"):
+def original_colors(raw, level):
+    """Recover level tables for VIC registers/Color RAM.
+    The raster split and runtime-modified cells are not represented.
+    """
+    def at(address, count):
+        offset = 2 + 0x0900 - 0x0801 + address - 0x8000
+        return raw[offset:offset + count]
+    k = 4 * level
+    vic = at(0x963D + k, 4)
+    bands = at(0x965D + k, 4)
+    extras = at(0x967D + k, 4)
+    assert len(vic) == len(bands) == len(extras) == 4
+    ram = bytearray([bands[2]]*280 + [bands[3]]*720)
+    for y in (1,2,3): ram[0xDA+y] = extras[1]
+    shift = 0 if level == 7 else 40
+    for x in (0x12,0x14,0x16): ram[x+shift] = extras[2]
+    for x in (0x3A,0x3C,0x3E): ram[x+shift] = extras[3]
+    return vic, bands, extras, bytes(ram)
+
+
+def project(tiles,maps,mode="c64multicolor",name="OILS WELL - 8 LEVELS", raw=None, level_indices=None):
     charset=tiles+bytes(1024)
     chars=[]
     for c in range(256):
         pixels=[(charset[c*8+(p//8)]>>(7-p%8))&1 for p in range(64)]
         chars.append({"data":[pixels]})
     frames=[]
-    for m in maps:
-        cells=[[{"t":m[y*40+x],"fc":(9 if mode=="c64multicolor" else 1),"bc":-1} for x in range(40)] for y in range(25)]
-        frames.append({"data":cells,"bgColor":0,"borderColor":0,"c64Multi1Color":11,"c64Multi2Color":12})
+    if raw is None or level_indices is None:
+        raise ValueError("TEST03 requires original PRG and source level indices")
+    for m, level in zip(maps,level_indices):
+        vic, bands, extras, ram = original_colors(raw, level)
+        cells=[[{"t":m[y*40+x],"fc":ram[y*40+x],"bc":-1} for x in range(40)] for y in range(25)]
+        frames.append({"data":cells,"bgColor":vic[1],"borderColor":vic[0],
+                       "c64Multi1Color":vic[2],"c64Multi2Color":vic[3]})
     return {
       "version":1,
       "tileSet":{"id":1,"name":"Oil's Well 128 chars (padded 256)","version":1,
@@ -52,7 +76,7 @@ def project(tiles,maps,mode="c64multicolor",name="OILS WELL - 8 LEVELS"):
                    "cellHeight":8,"tileSetId":1,"colorPaletteId":2,
                    "blockMode":False,"frames":frames}]},
       "ricoInfo":{"originalMode":"raster split bitmap hires + multicolor characters",
-                  "colors":"PROVISIONAL multicolor: fc=9, hires: fc=1; not extracted",
+                  "colors":"ORIGINAL static level-dependent VIC registers and Color RAM; dynamic cells incomplete",
                   "warning":"Static PRG viewers cannot reproduce original raster split."}
     }
 
@@ -70,17 +94,17 @@ def main():
     files={}
     def add_json(name,obj):
         files[name]=json.dumps(obj,ensure_ascii=False,separators=(",",":")).encode()
-    add_json("LVLLVL/OILS_WELL_8_NIVELES.json",project(t,maps))
-    add_json("LVLLVL/OILS_WELL_8_NIVELES_HIRES.json",project(t,maps,"c64standard"))
+    add_json("LVLLVL/OILS_WELL_8_NIVELES.json",project(t,maps,raw=raw,level_indices=list(range(8))))
+    add_json("LVLLVL/OILS_WELL_8_NIVELES_HIRES.json",project(t,maps,"c64standard",raw=raw,level_indices=list(range(8))))
     files["BIN/TILESET_ORIGINAL_128.bin"]=t
     files["BIN/TILESET_PAD_256.bin"]=t+bytes(1024)
     for i,m in enumerate(maps,1):
         n="LEVEL_%02d"%i
         files["BIN/"+n+"_MAP_1024_ORIGINAL.bin"]=m
         files["BIN/"+n+"_MAP_40x25.bin"]=m[:1000]
-        files["BIN/"+n+"_COLOR_PREVIEW_NO_ORIGINAL.bin"]=bytes([1])*1000
+        files["BIN/"+n+"_COLOR_RAM_ORIGINAL_ESTATICO.bin"]=original_colors(raw,i-1)[3]
         files["PRG/OILS_WELL_"+n+"_ESTATICO.prg"]=viewer(t,m)
-        add_json("LVLLVL/"+n+".json",project(t,[m],name=n))
+        add_json("LVLLVL/"+n+".json",project(t,[m],name=n,raw=raw,level_indices=[i-1]))
     files["README.txt"]=(
         "RICOS PRG TO LVLLVL - TEST01\n"
         "8 frame native-format LVLLVL JSON with original tileset and original maps.\n"
