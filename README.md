@@ -64,3 +64,36 @@ Un PRG genérico puede ser solo un cargador, estar comprimido, usar sprites, bit
 ### Pruebas iniciales
 
 Probado con PRG sintético que contiene una pantalla a $2000 y un charset a $2800, verificando selección, exportación de un frame, indices 0–255 y multicolor de celdas fc=9. Pendiente de validar visualmente con títulos reales en LVLLVL.
+
+
+## TEST05 — Captura automática desde VICE (.vsf) inspirada en importación LVLLVL
+
+El código de [LVLLVL/importC64Formats.js](https://github.com/jaammees/lvllvl/blob/main/src/js/textMode/import/importC64Formats.js)
+ejecuta el PRG en su emulador integrado, usa las lecturas VIC activas y recupera
+mapa, charset, Color RAM y modo gráfico, en lugar de adivinar direcciones en el PRG.
+
+Nuestra primera aproximación a esa estrategia es el **lector de snapshots VICE**
+(\`vice-capture.js\`), añadido al modo genérico, sin modificar Oil's Well TEST03:
+
+1. Ejecutar el juego en VICE y llegar a una pantalla o nivel estable.
+2. Guardar un **snapshot completo .vsf** en el menú de VICE.
+3. Abrir \`generic.html\`, elegir ese .vsf, y pulsar **Analizar gráficos**.
+4. Verificar la pantalla y los caracteres; pulsar **+ Añadir mapa como frame** y luego **Exportar JSON LVLLVL**.
+5. Para otro nivel, abrir otro snapshot .vsf. Los frames deben compartir charset y modo, por ahora.
+
+El lector valida cabecera, módulos C64MEM, VIC-II, CIA2 y sus longitudes;
+interpreta la versión VIC-II 1.x documentada en VICE; calcula el banco de
+video desde el puerto CIA2, los punteros de $D018, el modo de $D011/$D016,
+la paleta $D020–$D023 y 1000 bytes de Color RAM del módulo VIC-II.
+Si la pantalla se captura en modo bitmap o ECM, TEST05 la rechaza antes de
+exportar caracteres que no reflejarían el juego. Si el VIC utiliza la ROM de
+caracteres, intenta recuperar CHARGEN desde el módulo C64ROM, si existe.
+
+**Pruebas:** validado con un snapshot de prueba sintético VIC-II 1.3 con
+direcciones $8400/$8800, registros y Color RAM conocidos, y rechazo de datos
+inválidos. Falta probar snapshots creados por distintas versiones de VICE
+y títulos reales. **No es todavía un emulador C64 integrado**: aprovecha
+la ejecución realizada en VICE; el importador PRG heurístico permanece como
+alternativa. Una única captura no reconstruye sprites, raster splits, niveles
+comprimidos todavía no cargados ni elementos dinámicos fuera del estado
+visible.
