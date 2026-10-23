@@ -36,8 +36,8 @@ def project(tiles,maps,mode="c64multicolor",name="OILS WELL - 8 LEVELS"):
         chars.append({"data":[pixels]})
     frames=[]
     for m in maps:
-        cells=[[{"t":m[y*40+x],"fc":1,"bc":-1} for x in range(40)] for y in range(25)]
-        frames.append({"data":cells,"bgColor":0,"borderColor":0})
+        cells=[[{"t":m[y*40+x],"fc":(9 if mode=="c64multicolor" else 1),"bc":-1} for x in range(40)] for y in range(25)]
+        frames.append({"data":cells,"bgColor":0,"borderColor":0,"c64Multi1Color":11,"c64Multi2Color":12})
     return {
       "version":1,
       "tileSet":{"id":1,"name":"Oil's Well 128 chars (padded 256)","version":1,
@@ -52,7 +52,7 @@ def project(tiles,maps,mode="c64multicolor",name="OILS WELL - 8 LEVELS"):
                    "cellHeight":8,"tileSetId":1,"colorPaletteId":2,
                    "blockMode":False,"frames":frames}]},
       "ricoInfo":{"originalMode":"raster split bitmap hires + multicolor characters",
-                  "colors":"PROVISIONAL WHITE: not extracted",
+                  "colors":"PROVISIONAL multicolor: fc=9, hires: fc=1; not extracted",
                   "warning":"Static PRG viewers cannot reproduce original raster split."}
     }
 
