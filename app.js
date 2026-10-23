@@ -68,20 +68,34 @@ function getPRG(m){
   a.set(Uint8Array.from(atob(STUB),c=>c.charCodeAt(0)));
   a.set(m,150);a.set(tiles,1174);return a;
 }
-function image(canvas,m,isTiles){
+function image(canvas,m,isTiles,level){
   const ctx=canvas.getContext("2d");
   const im=ctx.createImageData(canvas.width,canvas.height);
+  const info=originalColors(level);
+  const mode=$("mode").value;
   for(let y=0;y<canvas.height;y++)for(let x=0;x<canvas.width;x++){
-    const c=isTiles?Math.floor(y/8)*16+Math.floor(x/8):m[Math.floor(y/8)*40+Math.floor(x/8)];
-    const b=tiles[c*8+(y%8)]&(128>>(x%8));
-    const v=b?255:0,p=(y*canvas.width+x)*4;
-    im.data[p]=v;im.data[p+1]=v;im.data[p+2]=v;im.data[p+3]=255;
+    const cx=x>>3,cy=y>>3;
+    const c=isTiles?(cy*16+cx):m[cy*40+cx];
+    const packed=(c<128)?tiles[c*8+(y&7)]:0;
+    const bit=(packed>>(7-(x&7)))&1;
+    let color;
+    if(isTiles)color=bit?1:0;
+    else {
+      const fc=info.ram[cy*40+cx];
+      if(mode==="c64multicolor"&&(fc&8)){
+        const pair=(packed>>(6-2*((x&7)>>1)))&3;
+        color=[info.vic[1],info.vic[2],info.vic[3],fc&7][pair];
+      } else color=bit?fc:info.vic[1];
+    }
+    const rgb=COLORS[color&15],pos=(y*canvas.width+x)*4;
+    im.data[pos]=(rgb>>16)&255;im.data[pos+1]=(rgb>>8)&255;
+    im.data[pos+2]=rgb&255;im.data[pos+3]=255;
   }
   ctx.putImageData(im,0,0);
 }
 function preview(){
   const n=Number($("level").value);
-  image($("map"),levels[n],false);image($("tileset"),levels[n],true);
+  image($("map"),levels[n],false,n);image($("tileset"),levels[n],true,n);
 }
 function download(filename,data,mime="application/octet-stream"){
   const url=URL.createObjectURL(new Blob([data],{type:mime}));
@@ -123,12 +137,12 @@ function bundle(){
     const n=label(i);
     files.push(["BIN/"+n+"_MAP_1024_ORIGINAL.bin",m]);
     files.push(["BIN/"+n+"_MAP_40x25.bin",m.slice(0,1000)]);
-    files.push(["BIN/"+n+"_COLOR_PREVIEW_NO_ORIGINAL.bin",new Uint8Array(1000).fill(1)]);
+    files.push(["BIN/"+n+"_COLOR_RAM_ORIGINAL_ESTATICO.bin",originalColors(i).ram]);
     files.push(["PRG/OILS_WELL_"+n+"_ESTATICO.prg",getPRG(m)]);
     files.push(["LVLLVL/"+n+".json",getJSON([m],n)]);
   });
-  files.push(["README.txt","OIL'S WELL TEST01\n8 frames LVLLVL with original 8x8 character data, unchanged map indices.\nCOLOR RAM IS PROVISIONAL WHITE.\nViewer PRGs do not recreate the bitmap/character raster split.\n"]);
-  download("OILS_WELL_RICOS_LVLLVL_TEST01.zip",zip(files),"application/zip");
+  files.push(["README.txt","OIL'S WELL TEST03\n8 frames LVLLVL with original 8x8 character data, unchanged map indices.\nColor RAM by level from original code tables, runtime dynamic overlay not included.\nViewer PRGs do not recreate the bitmap/character raster split.\n"]);
+  download("OILS_WELL_RICOS_LVLLVL_TEST03.zip",zip(files),"application/zip");
 }
 $("source").addEventListener("change",async e=>{
   try{
@@ -137,7 +151,7 @@ $("source").addEventListener("change",async e=>{
     $("filename").textContent=file.name;
     $("level").innerHTML=levels.map((_,i)=>"<option value='"+i+"'>Nivel "+(i+1)+"</option>").join("");
     ["level","bundle","alljson","onejson","oneprg","tiles"].forEach(id=>$(id).disabled=false);
-    $("status").textContent="Extraccion RAW OK: 8 mapas de 1024 B, charset original 1024 B, 128 caracteres. Color RAM provisional.";
+    $("status").textContent="Extraccion RAW OK: 8 mapas de 1024 B, charset original 1024 B, 128 caracteres. Colores por nivel reconstruidos desde ASM; raster split pendiente.";
     preview();
   }catch(ex){levels=null;$("status").textContent="FAIL: "+ex.message;}
 });
