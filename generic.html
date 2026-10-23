@@ -47,6 +47,7 @@ canvas{display:block;background:#000;image-rendering:pixelated;border:1px solid 
 <label>Color RAM BIN opcional (1000/1024 B)
   <input type="file" id="colorOverride" accept=".bin,.col">
 </label>
+<label><input type="checkbox" id="ramColor"> Usar $D800–$DBE7 del volcado RAM como Color RAM (solo si ese volcado contiene los valores visibles de E/S)</label>
 <button id="analyze">Analizar gráficos</button>
 <p id="status">Cargá un juego. Los candidatos son aproximaciones: verificá las vistas previas.</p>
 </section>
