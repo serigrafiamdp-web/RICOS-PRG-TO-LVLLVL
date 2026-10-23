@@ -52,7 +52,7 @@ const MapHunter=(()=>{
     return {offset,bytes,exact:similar/1000,vocabulary:shared/1000,unique,mostCommon:max/1000,
       horizontalRepeats:adjacent/975,nonzero:nonzero/1000,
       // This is a hint, NOT proof of being a map.
-      suggested:unique>=7&&max<850&&shared/1000>=0.48};
+      suggested:unique>=7&&max<850&&shared/1000>=0.43};
   }
   function neighborhood(file,reference,anchor,stride=1024,before=8,after=8){
     validate(file,reference);
