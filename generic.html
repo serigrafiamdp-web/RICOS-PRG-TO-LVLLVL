@@ -24,18 +24,19 @@ canvas{display:block;background:#000;image-rendering:pixelated;border:1px solid 
 <body>
 <p><a href="./">← Oil's Well (TEST03 PASS)</a></p>
 <h1>RICOS · PRG TO LVLLVL</h1>
-<p>Modo genérico experimental · TEST04 · recuperar pantallas y tilesets de juegos C64</p>
+<p>Modo genérico experimental · TEST05 · capturar pantallas desde el VIC-II del juego</p>
+<section class="note"><b>NUEVO — Captura con VICE:</b> ejecutá el juego hasta la pantalla deseada, guardá un snapshot <code>.vsf</code> desde VICE, cargalo abajo y presioná <b>Analizar gráficos</b>. Se detectan automáticamente mapa, charset, colores y modo de caracteres. Para varios niveles, repetí con otros snapshots y añadilos como frames (si comparten charset). No requiere buscar direcciones a mano.</section>
 <section>
 <h2>1 · Archivo del juego</h2>
 <div class="panel">
-  <label>PRG / BIN / RAM 64 KB
-    <input type="file" id="source" accept=".prg,.bin,.ram,.mem">
+  <label>Snapshot VICE (.vsf), PRG / BIN / RAM 64 KB
+    <input type="file" id="source" accept=".vsf,.prg,.bin,.ram,.mem">
   </label>
   <label>Dirección base si es BIN parcial (hexadecimal con $ o decimal)
     <input type="text" id="rawBase" value="$0000">
   </label>
 </div>
-<p class="hint">PRG: se carga en la dirección indicada por sus dos primeros bytes. BIN de exactamente 65.536 bytes: memoria RAM completa. BIN parcial: indicar base manual. No se ejecuta el código del juego.</p>
+<p class="hint">VSF: importa el estado real del VIC cuando se guardó el snapshot. PRG: se carga en la dirección indicada por sus dos primeros bytes. BIN de exactamente 65.536 bytes: memoria RAM completa. BIN parcial: indicar base manual. No se ejecuta el código del juego.</p>
 <div class="panel">
   <label>Charset BIN opcional (1024/2048 B)
     <input type="file" id="charOverride" accept=".bin,.chr">
@@ -106,10 +107,11 @@ canvas{display:block;background:#000;image-rendering:pixelated;border:1px solid 
 <button id="exportZip" disabled>Exportar ZIP (JSON + BIN)</button>
 </section>
 <section class="note">
-<b>Limitación actual:</b> la detección inspecciona bytes, no ejecuta el PRG. Si el juego descomprime gráficos al arrancar,
+<b>Limitación actual:</b> el modo PRG directo inspecciona bytes, no ejecuta el PRG. El modo VSF lee la captura real de VICE, sin emular dentro de esta página. Si el juego descomprime gráficos al arrancar,
 trabaja con un volcado RAM de 64 KB obtenido durante el juego. No identifica automáticamente sprites, bitmap, splits de raster,
 mapas comprimidos o reglas de colisión. El modo especializado de Oil's Well sigue intacto.
 </section>
+<script src="./vice-capture.js"></script>
 <script src="./generic.js"></script>
 </body>
 </html>
