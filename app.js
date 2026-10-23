@@ -18,17 +18,37 @@ function decodePRG(buf){
   levels=Array.from({length:8},(_,i)=>readBlock(0xa000+1024*i,1024));
   if(levels.some(m=>m.slice(0,1000).some(c=>c>=128)))throw Error("Los indices no coinciden con el tileset de 128 caracteres.");
 }
+// The original game updates these tables in raster/level routines
+// $828B and $8EB7-$8F34. Only static deterministic colors are recovered.
+function originalColors(level) {
+  const k=level*4;
+  const vic=readBlock(0x963D+k,4);   // D020 border, D021 BG, D022 and D023
+  const bands=readBlock(0x965D+k,4); // first two sprite colors, then Color RAM bands
+  const extras=readBlock(0x967D+k,4);
+  const ram=new Uint8Array(1000);
+  ram.fill(bands[2],0,280);ram.fill(bands[3],280);
+  for(const y of [1,2,3])ram[0xDA+y]=extras[1];
+  const shift=(level===7)?0:40;
+  for(const x of [0x12,0x14,0x16])ram[x+shift]=extras[2];
+  for(const x of [0x3A,0x3C,0x3E])ram[x+shift]=extras[3];
+  return {vic,bands,extras,ram};
+}
 function project(maps,mode,label){
   const full=new Uint8Array(2048);full.set(tiles);
   const glyphs=Array.from({length:256},(_,t)=>({
     data:[Array.from({length:64},(_,p)=>(full[t*8+(p>>3)]>>(7-(p&7)))&1)]
   }));
-  const frames=maps.map(m=>({
-    bgColor:0,borderColor:0,c64Multi1Color:11,c64Multi2Color:12,
-    data:Array.from({length:25},(_,y)=>Array.from({length:40},(_,x)=>({
-      t:m[y*40+x],fc:mode==="c64multicolor"?9:1,bc:-1
-    })))
-  }));
+  const frames=maps.map(m=>{
+    const idx=levels.indexOf(m);if(idx<0)throw Error("Mapa sin indice de nivel");
+    const p=originalColors(idx);
+    return {
+      bgColor:p.vic[1],borderColor:p.vic[0],
+      c64Multi1Color:p.vic[2],c64Multi2Color:p.vic[3],
+      data:Array.from({length:25},(_,y)=>Array.from({length:40},(_,x)=>({
+        t:m[y*40+x],fc:p.ram[y*40+x],bc:-1
+      })))
+    };
+  });
   return {
     version:1,
     tileSet:{id:1,name:"Oil's Well original 128 chars",version:1,width:8,height:8,type:"ascii",sortMethods:["index"],paletteLayouts:[],tiles:glyphs},
@@ -38,7 +58,7 @@ function project(maps,mode,label){
       screenMode:mode,cellWidth:8,cellHeight:8,tileSetId:1,colorPaletteId:2,
       blockMode:false,frames:frames
     }]},
-    ricoInfo:{modeOriginal:"Raster split bitmap hires + multicolor chars",colorRam:"not recovered; PROVISIONAL multicolor fc=9, hires fc=1",warning:"WHITE PREVIEW: original raster and sprites are not reproduced"}
+    ricoInfo:{modeOriginal:"Raster split bitmap hires + multicolor chars",colorRam:"Recovered per-level static Color RAM from code; dynamic elements and raster split excluded",warning:"WHITE PREVIEW: original raster and sprites are not reproduced"}
   };
 }
 function label(n){return "LEVEL_"+String(n+1).padStart(2,"0");}
