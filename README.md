@@ -97,3 +97,48 @@ la ejecución realizada en VICE; el importador PRG heurístico permanece como
 alternativa. Una única captura no reconstruye sprites, raster splits, niveles
 comprimidos todavía no cargados ni elementos dinámicos fuera del estado
 visible.
+
+
+## TEST06 — Conversor híbrido: VSF + PRG original
+
+Abre [generic-test06.html](./generic-test06.html) desde GitHub Pages. Conserva la extracción de Oil's Well TEST03 intacta.
+
+### Objetivo realista
+TEST05B capturaba **una sola pantalla VIC**. TEST06 complementa la captura con la búsqueda
+del mapa observado dentro de los bytes del **PRG original**, para localizar archivos de
+niveles estáticos contiguos. No identifica por sí solo los esquemas de color específicos,
+gráficos descomprimidos ni bancos de tiles que cambian por nivel.
+
+1. Ejecutá el juego con VICE y guardá un snapshot VSF en un nivel visible.
+2. En TEST06, cargá el VSF y presioná **Analizar gráficos**.
+3. Cargá **el PRG original del mismo juego** en el apartado de búsqueda de niveles.
+4. Pulsá **Buscar mapas relacionados con la captura**. Busca coincidencias con la
+   pantalla visible; el resultado indica porcentaje de bytes coincidentes.
+5. Seleccioná un ancla. Elegí separación de nivel (1024, 1000 o 2048 bytes) y
+   número de bloques anteriores/posteriores.
+6. Revisá las vistas previas y marcá solamente los mapas reales.
+7. Pulsá **Añadir mapas marcados como frames** y exportá JSON o ZIP.
+
+**Importante:** los bloques mostrados cerca del mapa capturado son candidatos
+heurísticos, no niveles confirmados. La sugerencia usa caracteres compartidos y
+estructura básica, no analiza el código del juego. Un resultado con 0 coincidencias
+indica que el mapa puede estar comprimido o transformado; no lo reconstruye por arte
+de magia. Los mapas que no corresponden a la captura quedan con colores **provisionales**,
+porque cada nivel puede tener su propia rutina/paleta ASM.
+
+### Validación concreta con Oil's Well
+Probamos la posición exacta de los ocho niveles existentes en \`oils well.prg\`:
+
+- Primer mapa en desplazamiento de archivo \`0x2101\`.
+- Los demás en \`0x2501\`, \`0x2901\`, \`0x2D01\`, \`0x3101\`, \`0x3501\`, \`0x3901\`, \`0x3D01\`.
+- Todos separados **1024 bytes** y los ocho comparados byte por byte con los BIN
+  originales exportados por el conversor especializado: iguales.
+- El filtro de sugerencias separa esos ocho bloques de los inmediatos que no
+  comparten los caracteres del mapa capturado de referencia.
+- Pruebas del motor en JS con datos sintéticos y esquema HTML JS: PASS.
+- **Pendiente**: probar con el snapshot real del usuario y un segundo juego.
+
+Para calidad equivalente al perfil Oil's Well, debemos luego sumar **perfiles
+por juego**: entender loaders/descompresores, punteros de niveles, charset cambiantes,
+Color RAM por nivel y posibles cambios raster. Esta ingeniería inversa no se
+obtiene únicamente de una instantánea.
