@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RICOS PRG TO LVLLVL</title>
+<style>
+*{box-sizing:border-box}body{max-width:1120px;margin:auto;background:#131724;color:#f1f3f9;font:16px system-ui,Arial;padding:22px}h1{font-size:2rem}section{border:1px solid #35425f;border-radius:12px;background:#202738;padding:18px;margin:15px 0}button,select,input{font:inherit;padding:9px;border-radius:7px;border:1px solid #52648a;background:#32405c;color:white;margin:4px}button{cursor:pointer}button:disabled{opacity:.4}canvas{image-rendering:pixelated;width:100%;height:auto;border:1px solid #59627b;background:black}#tileset{max-width:350px}.grid{display:grid;grid-template-columns:2fr 1fr;gap:18px}@media(max-width:750px){.grid{grid-template-columns:1fr}}.warn{background:#292637;border-left:3px solid #c68a46;padding:12px;color:#eddaab}.muted{color:#b2c0dc;font-size:.9rem}
+</style></head>
+<body>
+<h1>RICOS · PRG TO LVLLVL</h1><p>Oil's Well C64 → ocho niveles con tileset y JSON para LVLLVL</p>
+<section><label>PRG original o TEST03: <input id="source" type="file" accept=".prg"></label><span id="filename"></span><p class="warn">Los BIN y los índices de mapa son originales. El juego utiliza un cambio de modo gráfico por raster que no se reproduce en los visores estáticos. Los colores blancos son temporales, no los atributos reales del juego.</p><p id="status">Elegí el juego PRG con cargador COPY SOFT.</p></section>
+<section class="grid"><div><label>Nivel <select id="level" disabled></select></label> <label>Modo editor <select id="mode"><option value="c64multicolor">C64 multicolor carácter</option><option value="c64standard">C64 hires carácter</option></select></label><p class="muted">Vista estática, 40×25 caracteres</p><canvas id="map" width="320" height="200"></canvas></div><div><p>Tileset 128 caracteres originales</p><canvas id="tileset" width="128" height="64"></canvas></div></section>
+<section><button id="bundle" disabled>Descargar ZIP completo</button><button id="alljson" disabled>JSON ocho frames</button><button id="onejson" disabled>JSON nivel</button><button id="oneprg" disabled>PRG nivel</button><button id="tiles" disabled>Tileset BIN</button><p class="muted">Se extraen mapas, tileset y visores. No altera el juego original.</p></section>
+<script src="app.js"></script>
+</body></html>
